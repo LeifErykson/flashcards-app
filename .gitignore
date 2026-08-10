@@ -1,0 +1,31 @@
+# .NET
+**/bin/
+**/obj/
+**/out/
+*.user
+*.suo
+*.cache
+
+# Node
+**/node_modules/
+**/dist/
+**/build/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Database
+*.db
+*.sqlite
+
+# OS
+Thumbs.db
