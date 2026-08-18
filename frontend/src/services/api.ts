@@ -50,6 +50,7 @@ export const flashcardsApi = {
 
 // Study endpoints
 export const studyApi = {
+  resetProgress: (deckId: number) => api.post(`/study/reset/${deckId}`),
   start: (deckId: number) => api.post('/study/start', { deckId }),
   record: (data: { cardId: number; isCorrect: boolean }) =>
     api.post('/study/record', data),

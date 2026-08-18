@@ -1,7 +1,7 @@
 // Full file with Back button included
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { decksApi, flashcardsApi } from '../services/api';
+import { decksApi, flashcardsApi, studyApi } from '../services/api';
 
 interface Flashcard {
   id: number;
@@ -119,6 +119,30 @@ const EditDeck: React.FC = () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
   if (!deck) return <div>Deck not found</div>;
+
+  const resetProgress = async () => {
+    if (!window.confirm('Reset all progress for this deck? This will mark all cards as unmastered.')) return;
+    
+    try {
+      // Get all flashcards, then reset progress for each
+      const cardsRes = await flashcardsApi.getByDeck(Number(id));
+      const cards = cardsRes.data;
+      
+      for (const card of cards) {
+        await studyApi.record({ cardId: card.id, isCorrect: false });
+      }
+      
+      alert('Progress reset successfully!');
+      await loadDeckData();
+    } catch (err: any) {
+      setError(err.response?.data || 'Failed to reset progress');
+    }
+  };
+  // Add this button next to the Update/Delete buttons:
+  <button onClick={resetProgress} style={{ marginRight: '10px', backgroundColor: '#ffc107' }}>
+    Reset Progress
+  </button>
+
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>

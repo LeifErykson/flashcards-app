@@ -243,4 +243,49 @@ public class StudyController : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
     }
+
+    // POST: api/study/reset/{deckId}
+    [HttpPost("reset/{deckId}")]
+    public async Task<IActionResult> ResetProgress(int deckId)
+    {
+        var userId = GetUserId();
+
+        // Verify deck exists and user owns it
+        var deck = await _context.Decks.FindAsync(deckId);
+        if (deck == null)
+            return NotFound("Deck not found");
+
+        if (deck.OwnerId != userId)
+            return Forbid("You can only reset progress for your own decks");
+
+        // Get all flashcards in this deck
+        var flashcards = await _context.Flashcards
+            .Where(f => f.DeckId == deckId)
+            .Select(f => f.Id)
+            .ToListAsync();
+
+        if (!flashcards.Any())
+            return BadRequest("This deck has no flashcards");
+
+        // Find all progress records for this user and these cards
+        var progressRecords = await _context.CardProgress
+            .Where(cp => cp.UserId == userId && flashcards.Contains(cp.CardId))
+            .ToListAsync();
+
+        if (progressRecords.Any())
+        {
+            // Reset all progress records
+            foreach (var progress in progressRecords)
+            {
+                progress.CorrectCount = 0;
+                progress.IncorrectCount = 0;
+                progress.IsMastered = false;
+                progress.LastReviewedAt = null;
+            }
+            
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { message = "Progress reset successfully" });
+    }
 }

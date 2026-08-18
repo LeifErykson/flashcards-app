@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { studyApi, decksApi } from '../services/api';
+import { studyApi, decksApi, flashcardsApi } from '../services/api';
 
 interface StudyCard {
   cardId: number;
@@ -27,11 +27,12 @@ const Study: React.FC = () => {
   const [deckTitle, setDeckTitle] = useState('');
   const [completed, setCompleted] = useState(false);
 
-  useEffect(() => {
-    startStudy();
-  }, [id]);
-
   const startStudy = async () => {
+    setLoading(true);
+    setCompleted(false);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    
     try {
       const [deckRes, studyRes] = await Promise.all([
         decksApi.getById(Number(id)),
@@ -48,6 +49,10 @@ const Study: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    startStudy();
+  }, [id]);
 
   const handleCardResult = async (isCorrect: boolean) => {
     if (!session || !session.cards[currentIndex]) return;
@@ -69,22 +74,53 @@ const Study: React.FC = () => {
     setIsFlipped(!isFlipped);
   };
 
+const resetDeckProgress = async () => {
+  if (!window.confirm('Reset all progress for this deck? All cards will be marked as unmastered.')) return;
+  
+  try {
+    await studyApi.resetProgress(Number(id));
+    alert('Progress reset successfully!');
+    await startStudy();
+  } catch (err: any) {
+    alert(err.response?.data || 'Failed to reset progress');
+  }
+  };
+
   if (loading) return <div>Loading study session...</div>;
   if (error) return <div style={{ color: 'red' }}>{error}</div>;
+  
+  // Completion screen
   if (completed || !session || session.cards.length === 0) {
-    return (
-      <div style={{ maxWidth: '600px', margin: '50px auto', textAlign: 'center' }}>
-        <h2>🎉 Study Complete!</h2>
-        <p>You've reviewed all cards in this deck.</p>
-        <p>
-          Mastered: {session?.masteredCount || 0} / {session?.totalCards || 0}
-        </p>
-        <button onClick={() => navigate('/')} style={{ padding: '10px 20px', marginTop: '20px' }}>
+  return (
+    <div style={{ maxWidth: '600px', margin: '50px auto', textAlign: 'center' }}>
+      <h2>🎉 Study Complete!</h2>
+      <p>You've reviewed all cards in this deck.</p>
+      <p>
+        Mastered: {session?.masteredCount || 0} / {session?.totalCards || 0}
+      </p>
+      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={startStudy} 
+          style={{ padding: '10px 20px', cursor: 'pointer' }}
+        >
+          🔄 Study Again
+        </button>
+        <button 
+          onClick={resetDeckProgress} 
+          style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#ffc107' }}
+        >
+          🔄 Reset Progress
+        </button>
+        <button 
+          onClick={() => navigate('/')} 
+          style={{ padding: '10px 20px', cursor: 'pointer' }}
+        >
           Back to Dashboard
         </button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   const currentCard = session.cards[currentIndex];
   const progress = ((currentIndex) / session.cards.length) * 100;
@@ -93,10 +129,9 @@ const Study: React.FC = () => {
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>{deckTitle}</h2>
-        <button onClick={() => navigate('/')}>Exit Study</button>
+        <button onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>Exit Study</button>
       </div>
       
-      {/* Progress bar */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ height: '8px', background: '#e0e0e0', borderRadius: '4px', overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${progress}%`, background: '#007bff' }} />
@@ -107,7 +142,6 @@ const Study: React.FC = () => {
         </div>
       </div>
       
-      {/* Flashcard */}
       <div
         onClick={handleFlip}
         style={{
@@ -127,7 +161,6 @@ const Study: React.FC = () => {
             minHeight: '300px'
           }}
         >
-          {/* Front */}
           <div
             style={{
               position: 'absolute',
@@ -153,7 +186,6 @@ const Study: React.FC = () => {
             </div>
           </div>
           
-          {/* Back */}
           <div
             style={{
               position: 'absolute',
