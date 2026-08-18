@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<StudySettings> StudySettings { get; set; }
     public DbSet<CardProgress> CardProgress { get; set; }
     public DbSet<ShareLink> ShareLinks { get; set; }
+
+    public DbSet<StudySession> StudySessions { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
