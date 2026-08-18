@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CreateDeck from './pages/CreateDeck';
+import EditDeck from './pages/EditDeck';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,6 +32,11 @@ function AppRoutes() {
         <Route path="/decks/new" element={
           <ProtectedRoute>
             <CreateDeck />
+          </ProtectedRoute>
+        } />
+        <Route path="/decks/:id/edit" element={
+          <ProtectedRoute>
+            <EditDeck />
           </ProtectedRoute>
         } />
         <Route path="/" element={
